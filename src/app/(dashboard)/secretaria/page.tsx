@@ -68,11 +68,11 @@ export default function SecretariaPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Secretaria - Solicitações</h1>
-          <p className="text-zinc-500 text-sm">Gerencie chamados e solicitações acadêmicas</p>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 transition-colors">Secretaria - Solicitações</h1>
+          <p className="text-zinc-500 dark:text-zinc-400 text-sm transition-colors">Gerencie chamados e solicitações acadêmicas</p>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
@@ -89,19 +89,19 @@ export default function SecretariaPage() {
           const label = statusLabels[status];
           
           return (
-            <div key={status} className="bg-white p-4 rounded-lg border border-zinc-200 shadow-sm">
-              <p className="text-2xl font-bold text-zinc-900">{count}</p>
-              <p className="text-sm text-zinc-500">{label}</p>
+            <div key={status} className="bg-white dark:bg-zinc-900 p-4 rounded-lg border border-zinc-200 dark:border-zinc-800 shadow-sm transition-colors duration-300">
+              <p className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 transition-colors">{count}</p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400 transition-colors">{label}</p>
             </div>
           );
         })}
       </div>
 
-      <div className="flex gap-2 flex-wrap bg-zinc-100 p-1 rounded-lg w-fit">
+      <div className="flex gap-2 flex-wrap bg-zinc-100 dark:bg-zinc-800/50 p-1 rounded-lg w-fit transition-colors">
         <button
           onClick={() => setFilter('all')}
           className={`px-4 py-1.5 rounded-md text-sm transition-all ${
-            filter === 'all' ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'
+            filter === 'all' ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
           }`}
         >
           Todos ({requests.length})
@@ -111,7 +111,7 @@ export default function SecretariaPage() {
             key={status}
             onClick={() => setFilter(status)}
             className={`px-4 py-1.5 rounded-md text-sm transition-all ${
-              filter === status ? 'bg-white text-zinc-900 shadow-sm' : 'text-zinc-500 hover:text-zinc-700'
+              filter === status ? 'bg-white dark:bg-zinc-900 text-zinc-900 dark:text-zinc-100 shadow-sm' : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300'
             }`}
           >
             {statusLabels[status]} ({requests.filter(r => r.status === status).length})
@@ -120,7 +120,7 @@ export default function SecretariaPage() {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex justify-between items-center">
+        <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg flex justify-between items-center transition-colors">
           <span>Erro: {error}</span>
           <button onClick={() => setError(null)} className="text-xs underline">Fechar</button>
         </div>
