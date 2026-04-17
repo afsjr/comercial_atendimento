@@ -4,6 +4,7 @@ import { createBrowserClient } from '@supabase/ssr';
 import { useEffect, useState } from 'react';
 import { Modal } from '@/components/Modal';
 import { Plus, X, Search } from 'lucide-react';
+import Link from 'next/link';
 
 interface Contact {
   id: string;
@@ -236,8 +237,13 @@ export default function LeadsPage() {
             ) : (
               filteredContacts.map((contact) => (
                 <tr key={contact.id} className="hover:bg-zinc-50">
-                  <td className="px-6 py-4 text-sm font-medium text-zinc-900">
-                    {contact.name}
+                  <td className="px-6 py-4 text-sm">
+                    <Link 
+                      href={`/leads/${contact.id}`}
+                      className="font-medium text-indigo-600 hover:underline"
+                    >
+                      {contact.name}
+                    </Link>
                   </td>
                   <td className="px-6 py-4 text-sm text-zinc-600">
                     {contact.email || '-'}
