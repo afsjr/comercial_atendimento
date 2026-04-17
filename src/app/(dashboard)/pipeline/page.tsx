@@ -1,7 +1,6 @@
 'use client';
 
-import { createBrowserClient } from '@supabase/ssr';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useTransition } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -14,248 +13,31 @@ import {
   type DragStartEvent,
   type DragOverEvent,
 } from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import { Modal } from '@/components/Modal';
-import { Plus, DollarSign, GripVertical } from 'lucide-react';
+import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import { Plus } from 'lucide-react';
+import { createBrowserClient } from '@supabase/ssr';
 
-interface Stage {
-  id: string;
-  name: string;
-  position: number;
-  color: string;
-  is_won: boolean;
-  is_lost: boolean;
-}
-
-interface Deal {
-  id: string;
-  title: string;
-  value: number | null;
-  stage_id: string;
-  contact_id: string;
-  assigned_to: string | null;
-  course_interest: string | null;
-  expected_close_date: string | null;
-  lost_reason: string | null;
-  created_at: string;
-}
-
-interface Contact {
-  id: string;
-  name: string;
-  phone: string | null;
-  email: string | null;
-}
-
-interface DealFormData {
-  title: string;
-  contact_id: string;
-  value: string;
-  expected_close_date: string;
-  course_interest: string;
-}
-
-interface SortableDealCardProps {
-  deal: Deal;
-  contactName: string;
-  onClick: () => void;
-}
-
-function SortableDealCard({ deal, contactName, onClick }: SortableDealCardProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: deal.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  const formatCurrency = (value: number | null) => {
-    if (!value) return null;
-    return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      onClick={onClick}
-      className="bg-white p-3 rounded-md border border-zinc-200 shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing"
-    >
-      <div className="flex items-start gap-2">
-        <GripVertical className="w-4 h-4 text-zinc-300 mt-1 flex-shrink-0" />
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-zinc-900 text-sm truncate">{deal.title}</p>
-          <p className="text-xs text-zinc-500 truncate">{contactName}</p>
-          {deal.value && (
-            <p className="text-sm font-semibold text-green-600 mt-2">
-              {formatCurrency(deal.value)}
-            </p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DealCard({ deal, contactName }: { deal: Deal; contactName: string }) {
-  const formatCurrency = (value: number | null) => {
-    if (!value) return null;
-    return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-  };
-
-  return (
-    <div className="bg-white p-3 rounded-md border border-zinc-200 shadow-sm">
-      <div className="flex items-start gap-2">
-        <GripVertical className="w-4 h-4 text-zinc-300 mt-1 flex-shrink-0" />
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-zinc-900 text-sm truncate">{deal.title}</p>
-          <p className="text-xs text-zinc-500 truncate">{contactName}</p>
-          {deal.value && (
-            <p className="text-sm font-semibold text-green-600 mt-2">
-              {formatCurrency(deal.value)}
-            </p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DealColumn({
-  stage,
-  deals,
-  contacts,
-  onDealClick,
-}: {
-  stage: Stage;
-  deals: Deal[];
-  contacts: Contact[];
-  onDealClick: (deal: Deal) => void;
-}) {
-  const { setNodeRef } = useSortable({
-    id: stage.id,
-    data: { type: 'column', stage },
-  });
-
-  const getContactName = (contactId: string) => {
-    const contact = contacts.find(c => c.id === contactId);
-    return contact?.name || 'Sem contato';
-  };
-
-  const stageValue = deals.reduce((sum, d) => sum + (d.value || 0), 0);
-
-  const formatCurrency = (value: number) => {
-    return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      className="flex-shrink-0 w-72 bg-zinc-50 rounded-lg border border-zinc-200"
-    >
-      <div
-        className="px-4 py-3 border-b border-zinc-200 rounded-t-lg"
-        style={{ backgroundColor: stage.color + '20' }}
-      >
-        <div className="flex justify-between items-center">
-          <h3 className="font-semibold text-zinc-900">{stage.name}</h3>
-          <span className="px-2 py-1 bg-white text-zinc-700 rounded text-sm">
-            {deals.length}
-          </span>
-        </div>
-        {stageValue > 0 && (
-          <p className="text-xs text-zinc-600 mt-1">{formatCurrency(stageValue)}</p>
-        )}
-      </div>
-
-      <SortableContext
-        items={deals.map(d => d.id)}
-        strategy={verticalListSortingStrategy}
-      >
-        <div className="p-2 space-y-2 min-h-[200px] max-h-[calc(100vh-350px)] overflow-y-auto">
-          {deals.length === 0 ? (
-            <p className="text-sm text-zinc-400 text-center py-4">
-              Nenhuma oportunidade
-            </p>
-          ) : (
-            deals.map(deal => (
-              <SortableDealCard
-                key={deal.id}
-                deal={deal}
-                contactName={getContactName(deal.contact_id)}
-                onClick={() => onDealClick(deal)}
-              />
-            ))
-          )}
-        </div>
-      </SortableContext>
-    </div>
-  );
-}
-
-const initialFormData: DealFormData = {
-  title: '',
-  contact_id: '',
-  value: '',
-  expected_close_date: '',
-  course_interest: '',
-};
-
-const courseOptions = [
-  { value: '', label: 'Selecione um curso (opcional)' },
-  { value: 'gestao_empresarial', label: 'Gestão Empresarial' },
-  { value: 'gestao_de_pessoas', label: 'Gestão de Pessoas' },
-  { value: 'gestao_financeira', label: 'Gestão Financeira' },
-  { value: 'gestao_de_projetos', label: 'Gestão de Projetos' },
-  { value: 'gestao_publica', label: 'Gestão Pública' },
-  { value: 'logistica', label: 'Logística' },
-  { value: 'recursos_humanos', label: 'Recursos Humanos' },
-  { value: 'outro', label: 'Outro' },
-];
+import { DealColumn } from './components/DealColumn';
+import { DealCard } from './components/DealCard';
+import { NewDealModal } from './components/NewDealModal';
+import { createDeal, updateDealStage } from './actions/deal-actions';
+import { PipelineStage, Deal, Contact } from '@/types/database.types';
 
 export default function PipelinePage() {
-  const [stages, setStages] = useState<Stage[]>([]);
+  const [stages, setStages] = useState<PipelineStage[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [contactSearch, setContactSearch] = useState('');
-  const [formData, setFormData] = useState<DealFormData>(initialFormData);
-  const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
-
   const [activeId, setActiveId] = useState<string | null>(null);
   const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null);
+  
+  const [isPending, startTransition] = useTransition();
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
   const dealsByStage = useMemo(() => {
@@ -305,12 +87,10 @@ export default function PipelinePage() {
     const overId = over.id as string;
 
     const activeDeal = deals.find(d => d.id === activeId);
-    const overDeal = deals.find(d => d.id === overId);
-
     if (!activeDeal) return;
 
     const overStage = stages.find(s => s.id === overId);
-    const targetStageId = overDeal?.stage_id || overStage?.id;
+    const targetStageId = overStage?.id || deals.find(d => d.id === overId)?.stage_id;
 
     if (targetStageId && activeDeal.stage_id !== targetStageId) {
       setDeals(prev =>
@@ -336,130 +116,63 @@ export default function PipelinePage() {
     if (!activeDeal) return;
 
     let newStageId = activeDeal.stage_id;
-
     if (overDeal) {
       newStageId = overDeal.stage_id;
     } else {
       const overStage = stages.find(s => s.id === overId);
-      if (overStage) {
-        newStageId = overStage.id;
-      }
+      if (overStage) newStageId = overStage.id;
     }
 
     if (newStageId && newStageId !== activeDeal.stage_id) {
-      setDeals(prev =>
-        prev.map(d =>
-          d.id === activeId ? { ...d, stage_id: newStageId } : d
-        )
-      );
-
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
-
-      await supabase.from('deals').update({ stage_id: newStageId }).eq('id', activeId);
-    }
-  };
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!formData.title.trim()) {
-      setFormError('Título é obrigatório');
-      return;
-    }
-    if (!formData.contact_id) {
-      setFormError('Selecione um contato');
-      return;
-    }
-
-    setSaving(true);
-    setFormError(null);
-    setSuccess(false);
-
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (!user) {
-        setFormError('Usuário não autenticado');
-        setSaving(false);
-        return;
-      }
-
-      const firstStage = stages[0];
-      if (!firstStage) {
-        setFormError('Nenhum stage disponível');
-        setSaving(false);
-        return;
-      }
-
-      const { error: insertError } = await supabase.from('deals').insert({
-        title: formData.title.trim(),
-        contact_id: formData.contact_id,
-        value: formData.value ? parseFloat(formData.value.replace(',', '.')) : null,
-        stage_id: firstStage.id,
-        assigned_to: user.id,
-        expected_close_date: formData.expected_close_date || null,
-        course_interest: formData.course_interest || null,
+      startTransition(async () => {
+        try {
+          await updateDealStage(activeId, newStageId);
+        } catch (err: any) {
+          setError(err.message);
+          fetchData(); 
+        }
       });
-
-      if (insertError) {
-        setFormError(insertError.message);
-      } else {
-        setSuccess(true);
-        fetchData();
-        setTimeout(() => {
-          setIsModalOpen(false);
-          setFormData(initialFormData);
-          setSuccess(false);
-        }, 1000);
-      }
-    } catch (err: any) {
-      setFormError(err.message);
-    } finally {
-      setSaving(false);
     }
   };
 
-  const filteredContacts = contacts.filter(c =>
-    c.name.toLowerCase().includes(contactSearch.toLowerCase()) ||
-    (c.email && c.email.toLowerCase().includes(contactSearch.toLowerCase())) ||
-    (c.phone && c.phone.includes(contactSearch))
-  );
+  const handleCreateDeal = async (formData: any) => {
+    const firstStage = stages[0];
+    if (!firstStage) throw new Error('Nenhum stage disponível');
+
+    await createDeal({
+      title: formData.title.trim(),
+      contact_id: formData.contact_id,
+      value: formData.value ? parseFloat(formData.value.replace(',', '.')) : null,
+      stage_id: firstStage.id,
+      expected_close_date: formData.expected_close_date || null,
+      course_interest: formData.course_interest || null,
+      assigned_to: null,
+    });
+    
+    fetchData();
+  };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <p className="text-zinc-500">Carregando pipeline...</p>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
       </div>
     );
   }
 
   const activeDeal = activeId ? deals.find(d => d.id === activeId) : null;
-  const activeContact = activeDeal
-    ? contacts.find(c => c.id === activeDeal.contact_id)
-    : null;
+  const activeContact = activeDeal ? contacts.find(c => c.id === activeDeal.contact_id) : null;
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-zinc-900">Pipeline de Vendas</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-zinc-900">Pipeline de Vendas</h1>
+          <p className="text-zinc-500 text-sm">Gerencie suas oportunidades e leads</p>
+        </div>
         <button
           onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-all shadow-sm active:scale-95"
         >
           <Plus className="w-4 h-4" />
           Nova Oportunidade
@@ -467,8 +180,9 @@ export default function PipelinePage() {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-          Erro: {error}
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex justify-between items-center">
+          <span>Erro: {error}</span>
+          <button onClick={() => setError(null)} className="text-xs underline">Fechar</button>
         </div>
       )}
 
@@ -479,181 +193,32 @@ export default function PipelinePage() {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-4 overflow-x-auto pb-4">
+        <div className="flex gap-4 overflow-x-auto pb-6 scrollbar-thin scrollbar-thumb-zinc-200">
           {stages.map(stage => (
             <DealColumn
               key={stage.id}
               stage={stage}
               deals={dealsByStage[stage.id] || []}
               contacts={contacts}
-              onDealClick={deal => setSelectedDeal(deal)}
+              onDealClick={setSelectedDeal}
             />
           ))}
         </div>
 
         <DragOverlay>
           {activeDeal && activeContact ? (
-            <DealCard deal={activeDeal} contactName={activeContact.name} />
+            <DealCard deal={activeDeal} contactName={activeContact.name} isOverlay />
           ) : null}
         </DragOverlay>
       </DndContext>
 
-      <Modal
+      <NewDealModal
         isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setFormData(initialFormData);
-          setFormError(null);
-          setContactSearch('');
-        }}
-        title="Nova Oportunidade"
-      >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {formError && (
-            <div className="p-3 bg-red-50 text-red-700 text-sm rounded-lg">
-              {formError}
-            </div>
-          )}
-
-          {success && (
-            <div className="p-3 bg-green-50 text-green-700 text-sm rounded-lg">
-              Oportunidade criada com sucesso!
-            </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 mb-1">
-              Título *
-            </label>
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleInputChange}
-              className="w-full px-4 py-2 border border-zinc-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              placeholder="Ex: Interesse em Gestão Empresarial"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 mb-1">
-              Contato *
-            </label>
-            <input
-              type="text"
-              placeholder="Buscar contato..."
-              value={contactSearch}
-              onChange={(e) => setContactSearch(e.target.value)}
-              className="w-full px-4 py-2 border border-zinc-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent mb-2"
-            />
-            <div className="max-h-40 overflow-y-auto border border-zinc-200 rounded-md">
-              {filteredContacts.length === 0 ? (
-                <p className="p-3 text-sm text-zinc-500 text-center">
-                  Nenhum contato encontrado
-                </p>
-              ) : (
-                filteredContacts.map(contact => (
-                  <label
-                    key={contact.id}
-                    className={`flex items-center gap-3 p-2 cursor-pointer hover:bg-zinc-50 ${
-                      formData.contact_id === contact.id ? 'bg-indigo-50' : ''
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="contact_id"
-                      value={contact.id}
-                      checked={formData.contact_id === contact.id}
-                      onChange={handleInputChange}
-                      className="text-indigo-600"
-                    />
-                    <div>
-                      <p className="text-sm font-medium text-zinc-900">
-                        {contact.name}
-                      </p>
-                      <p className="text-xs text-zinc-500">
-                        {contact.email || contact.phone || 'Sem informações'}
-                      </p>
-                    </div>
-                  </label>
-                ))
-              )}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-zinc-700 mb-1">
-                Valor Estimado
-              </label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
-                <input
-                  type="text"
-                  name="value"
-                  value={formData.value}
-                  onChange={handleInputChange}
-                  className="w-full pl-8 pr-4 py-2 border border-zinc-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  placeholder="0,00"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-zinc-700 mb-1">
-                Previsão de Fechamento
-              </label>
-              <input
-                type="date"
-                name="expected_close_date"
-                value={formData.expected_close_date}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-zinc-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 mb-1">
-              Curso de Interesse
-            </label>
-            <select
-              name="course_interest"
-              value={formData.course_interest}
-              onChange={handleInputChange}
-              className="w-full px-4 py-2 border border-zinc-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-            >
-              {courseOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={() => {
-                setIsModalOpen(false);
-                setFormData(initialFormData);
-                setFormError(null);
-              }}
-              className="flex-1 px-4 py-2 border border-zinc-300 text-zinc-700 rounded-md hover:bg-zinc-50 transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 transition-colors"
-            >
-              {saving ? 'Salvando...' : 'Criar Oportunidade'}
-            </button>
-          </div>
-        </form>
-      </Modal>
+        onClose={() => setIsModalOpen(false)}
+        contacts={contacts}
+        stages={stages}
+        onSubmit={handleCreateDeal}
+      />
     </div>
   );
 }

@@ -48,9 +48,9 @@ export interface Profile {
   id: string;
   user_id: string;
   full_name: string;
-  avatar_url: string | null;
+  avatar_url?: string | null;
   role: UserRole;
-  team: string | null;
+  team?: string | null;
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -59,13 +59,13 @@ export interface Profile {
 export interface Contact {
   id: string;
   name: string;
-  email: string | null;
-  phone: string | null;
-  whatsapp: string | null;
-  company: string | null;
+  email?: string | null;
+  phone?: string | null;
+  whatsapp?: string | null;
+  company?: string | null;
   source: ContactSource;
-  notes: string | null;
-  created_by: string | null;
+  notes?: string | null;
+  created_by?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -85,12 +85,12 @@ export interface Deal {
   id: string;
   contact_id: string;
   title: string;
-  value: number | null;
+  value?: number | null;
   stage_id: string;
-  assigned_to: string | null;
-  course_interest: string | null;
-  expected_close_date: string | null;
-  lost_reason: string | null;
+  assigned_to?: string | null;
+  course_interest?: string | null;
+  expected_close_date?: string | null;
+  lost_reason?: string | null;
   created_at: string;
   updated_at: string;
   // Joined fields
@@ -101,14 +101,14 @@ export interface Deal {
 
 export interface Interaction {
   id: string;
-  deal_id: string | null;
+  deal_id?: string | null;
   contact_id: string;
   user_id: string;
   type: InteractionType;
-  notes: string | null;
-  next_action: string | null;
-  next_action_date: string | null;
-  chatwoot_conversation_id: string | null;
+  notes?: string | null;
+  next_action?: string | null;
+  next_action_date?: string | null;
+  chatwoot_conversation_id?: string | null;
   created_at: string;
   // Joined fields
   user?: Profile;
@@ -117,17 +117,17 @@ export interface Interaction {
 export interface Request {
   id: string;
   contact_id: string;
-  assigned_to: string | null;
+  assigned_to?: string | null;
   type: RequestType;
-  course_id: string | null;
+  course_id?: string | null;
   status: RequestStatus;
   priority: RequestPriority;
-  notes: string | null;
-  internal_notes: string | null;
-  chatwoot_conversation_id: string | null;
+  notes?: string | null;
+  internal_notes?: string | null;
+  chatwoot_conversation_id?: string | null;
   created_at: string;
   updated_at: string;
-  resolved_at: string | null;
+  resolved_at?: string | null;
   // Joined fields
   contact?: Contact;
   course?: Course;
@@ -137,10 +137,10 @@ export interface Request {
 export interface Course {
   id: string;
   name: string;
-  modality: string | null;
-  duration_hours: number | null;
-  price: number | null;
-  description: string | null;
+  modality?: string | null;
+  duration_hours?: number | null;
+  price?: number | null;
+  description?: string | null;
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -149,14 +149,14 @@ export interface Course {
 export interface ChatwootConversation {
   id: string;
   chatwoot_id: string;
-  contact_id: string | null;
-  deal_id: string | null;
-  request_id: string | null;
-  assigned_to: string | null;
-  inbox_id: string | null;
+  contact_id?: string | null;
+  deal_id?: string | null;
+  request_id?: string | null;
+  assigned_to?: string | null;
+  inbox_id?: string | null;
   status: string;
-  labels: string[];
-  conversation_url: string | null;
+  labels?: string[];
+  conversation_url?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -164,11 +164,11 @@ export interface ChatwootConversation {
 export interface ResponseTemplate {
   id: string;
   title: string;
-  category: string | null;
+  category?: string | null;
   content: string;
-  variables: string[];
+  variables?: string[];
   is_global: boolean;
-  created_by: string | null;
+  created_by?: string | null;
   active: boolean;
   created_at: string;
   updated_at: string;
@@ -178,10 +178,10 @@ export interface Notification {
   id: string;
   user_id: string;
   title: string;
-  message: string | null;
+  message?: string | null;
   type: string;
-  reference_type: string | null;
-  reference_id: string | null;
+  reference_type?: string | null;
+  reference_id?: string | null;
   read: boolean;
   created_at: string;
 }
@@ -198,3 +198,4 @@ export type RequestInsert = Omit<Request, 'id' | 'created_at' | 'updated_at' | '
 export type ContactUpdate = Partial<ContactInsert>;
 export type DealUpdate = Partial<DealInsert>;
 export type RequestUpdate = Partial<RequestInsert>;
+
