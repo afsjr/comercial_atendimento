@@ -62,7 +62,7 @@ export default function PipelinePage() {
       const [stagesData, dealsData, contactsData] = await Promise.all([
         supabase.from('pipeline_stages').select('*').order('position'),
         supabase.from('deals').select('*'),
-        supabase.from('contacts').select('id, name, phone, email'),
+        supabase.from('contacts').select('*'),
       ]);
 
       setStages(stagesData.data || []);
@@ -164,11 +164,11 @@ export default function PipelinePage() {
   const activeContact = activeDeal ? contacts.find(c => c.id === activeDeal.contact_id) : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Pipeline de Vendas</h1>
-          <p className="text-zinc-500 text-sm">Gerencie suas oportunidades e leads</p>
+          <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 transition-colors">Pipeline de Vendas</h1>
+          <p className="text-zinc-500 dark:text-zinc-400 text-sm transition-colors">Gerencie suas oportunidades e leads</p>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
@@ -180,7 +180,7 @@ export default function PipelinePage() {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex justify-between items-center">
+        <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg flex justify-between items-center transition-colors">
           <span>Erro: {error}</span>
           <button onClick={() => setError(null)} className="text-xs underline">Fechar</button>
         </div>
@@ -193,7 +193,7 @@ export default function PipelinePage() {
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex gap-4 overflow-x-auto pb-6 scrollbar-thin scrollbar-thumb-zinc-200">
+        <div className="flex gap-4 overflow-x-auto pb-6 scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-800">
           {stages.map(stage => (
             <DealColumn
               key={stage.id}
