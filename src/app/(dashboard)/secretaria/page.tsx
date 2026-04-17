@@ -141,8 +141,3 @@ export default function SecretariaPage() {
     </div>
   );
 }
-rm>
-      </Modal>
-    </div>
-  );
-}
